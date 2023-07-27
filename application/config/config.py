@@ -2,4 +2,4 @@
 import configparser
 import os
 
-APPDATA = configparser.ConfigParser()
+APP_CONFIG = configparser.ConfigParser()
