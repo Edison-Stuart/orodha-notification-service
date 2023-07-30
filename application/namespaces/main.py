@@ -1,8 +1,9 @@
 from flask_restx import Namespace, Resource
 
 main_ns = Namespace(
-    "main",
-    description="The main namespace"
+    "Default",
+    description="The main namespace",
+    path="/main"
 )
 
 @main_ns.route('/hello')
