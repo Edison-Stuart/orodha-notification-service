@@ -1,3 +1,13 @@
+while getopts :t:f:u:p: flag
+do
+	case "${flag}" in
+		t) BUILD_TAG=${OPTARG};;
+		f) DOCKER_COMPOSE_FILE=${OPTARG};;
+		u) DOCKER_USERNAME=${OPTARG};;
+		p) DOCKER_PASSWORD=${OPTARG};;
+	esac
+done
+
 if [ -z "$BUILD_TAG" ];
   then
     echo "\$BUILD_TAG is not defined, defaulting to 'latest'"
@@ -22,7 +32,8 @@ if [ -z "$DOCKER_PASSWORD" ];
 	exit 1
 fi
 
-export IMAGE_NAME=$DOCKER_USERNAME/orodha-notification-service:$BUILD_TAG
+export DOCKER_USERNAME=$DOCKER_USERNAME
+export TAG=$BUILD_TAG
 
 docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
 
