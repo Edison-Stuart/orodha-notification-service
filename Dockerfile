@@ -1,22 +1,14 @@
-FROM python:3.11.4-slim-bookworm
+FROM edisonstuart/orodha-base-image-prod:latest
 
 ARG SERVER_USER=gunicorn-user
-ARG REQUIREMENTS_FILE=requirements.txt
 ARG PORT=5000
-COPY ./${REQUIREMENTS_FILE} .
 
-RUN apt-get update -y && \
-	DEBIAN_FRONTEND=noninteractive TZ=Etc/UTC && \
-	apt-get install -y python3-pip python3-dev && \
-	useradd ${SERVER_USER} && \
-	usermod -aG www-data ${SERVER_USER} && \
-	pip install -r ${REQUIREMENTS_FILE} && \
-	rm ${REQUIREMENTS_FILE}
+RUN adduser ${SERVER_USER} -G www-data -D
+USER ${SERVER_USER}
 
 COPY ./application /orodha-notification-service/application
 COPY ./scripts/server_scripts/server_start.sh /orodha-notification-service
-RUN chmod +x /orodha-notification-service/server_start.sh 
 
 WORKDIR /orodha-notification-service
 
-CMD /orodha-notification-service/server_start.sh  -u ${SERVER_USER} -p ${PORT}
+CMD /orodha-notification-service/server_start.sh -u gunicorn-user -p ${PORT}
