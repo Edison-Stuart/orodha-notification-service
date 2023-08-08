@@ -11,4 +11,4 @@ COPY ./scripts/server_scripts/server_start.sh /orodha-notification-service
 
 WORKDIR /orodha-notification-service
 
-CMD /orodha-notification-service/server_start.sh -u gunicorn-user -p ${PORT}
+CMD /orodha-notification-service/server_start.sh -u ${SERVER_USER} -p ${PORT}
