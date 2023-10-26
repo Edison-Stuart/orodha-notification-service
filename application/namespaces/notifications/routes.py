@@ -10,6 +10,8 @@ from application.namespaces.notifications.exceptions import (
     OrodhaBadRequestError,
     OrodhaForbiddenError,
     NotificationTypeError,
+    OrodhaInternalError,
+    OrodhaNotFoundError
 )
 
 notification_ns = Namespace(
@@ -23,6 +25,16 @@ list_invite_creation_model = notification_ns.model(
         "targets": fields.List(required=True),
         "list_id": fields.String(required=False),
         "notification_type": fields.String(default="list-invite")
+    },
+)
+
+notification_response_model = notification_ns.model(
+    "Notification Response",
+    {
+        "id": fields.String(required=True),
+        "targets": fields.List(required=True),
+        "last_accessed": fields.DateTime(required=False),
+        "list_id": fields.String(required=False),
     },
 )
 
@@ -45,14 +57,44 @@ class NotificationsApi(Resource):
     Class that contains routes for GET, POST, and DELETE requests interacting
     with notifications.
     """
+    @notification_ns.marshal_with(notification_response_model, as_list=True)
     def get(self):
+        """
+        Function which accepts GET requests to the notifications route, expecting a query parameter
+        which defines the target user_id, and returns a list of
+        Notifications associated with the user_id.
+
+        Args(expected as query parameter):
+            user_id(str): The user_id that is associated with the user we inted to
+                obtain the notifications for.
+
+        Returns:
+            response(list): A list containing the notifications associated with the user_id.
+                Contains:
+                    id(str): The notification id.
+                    list_id(str): The optional id of the associated list.
+                    targets(list): A list of user_id values which this notification is meant for.
+                    last_accessed(datetime): A datetime object of the date this notification
+                        was last accessed.
+
+        Raises:
+            OrodhaForbiddenError: If the JWT token from the request header
+                did not contain a valid keycloak user.
+            OrodhaInternalError: If there was an internal server error during get process.
+            OrodhaBadRequestError: If the expected query parameter was not passed in.
+        """
         try:
             request_token = get_token_from_header(request.headers)
+            target_user = request.args.get("user_id")
             response = application.namespaces.notifications.controllers.get_notifications(
-                request_token
+                request_token, target_user
             )
-#NOTE       Exception will be made more specific
-        except Exception as err:
+
+        except (
+            OrodhaForbiddenError,
+            OrodhaInternalError,
+            OrodhaBadRequestError
+        ) as err:
             notification_ns.abort(err.status_code, err.message)
 
         return response
@@ -97,13 +139,41 @@ class NotificationsApi(Resource):
         return {"status_code": HTTPStatus.OK}
 
     def delete(self):
+        """
+        Function which accepts DELETE request to the /notifications endpoint.
+
+        Args(Excpected as query parameters):
+            notification_id(str): A document id for a notification object. Used to query
+                and delete notifications.
+
+        Returns:
+            status_code(dict): dictionary containing a status code of 200, OK.
+
+        Raises:
+            OrodhaForbiddenError: If the JWT token from the request header
+                did not contain a valid keycloak user.
+
+            OrodhaNotFoundError: If there was not a unique notification found with the specific
+            notification_id that was sent in.
+
+            OrodhaBadRequestError: If notification_id was not passed to route.
+
+            OrodhaInternalError: If there was a problem with the deletion of the notification from
+            the database.
+        """
         try:
             request_token = get_token_from_header(request.headers)
-            response = application.namespaces.notifications.controllers.delete_notifications(
-                request_token
+            target_notification = request.args.get("notification_id")
+            application.namespaces.notifications.controllers.delete_notifications(
+                request_token, target_notification
             )
-#NOTE       Exception will be made more specific
-        except Exception as err:
+
+        except (
+            OrodhaForbiddenError,
+            OrodhaNotFoundError,
+            OrodhaBadRequestError,
+            OrodhaInternalError
+        ) as err:
             notification_ns.abort(err.status_code, err.message)
-        
-        return response
+
+        return {"status_code": HTTPStatus.OK}

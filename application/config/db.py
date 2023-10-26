@@ -1,6 +1,6 @@
 """Module which configures and obtains our mongo database connection."""
 from mongoengine import connect
-from application.config import obtain_config
+from application.config.config import obtain_config
 
 APPCONFIG = obtain_config()
 

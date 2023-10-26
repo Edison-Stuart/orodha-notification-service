@@ -33,3 +33,24 @@ class OrodhaBadRequestError(Exception):
     def __init__(self, message: str = None):
         self.message = message
         super().__init__(self.message)
+
+class OrodhaNotFoundError(Exception):
+    """
+    Exception for when a search for a specific object in either our database or
+    the keycloak database is not found. Returns a 404 NOT FOUND status code.
+    """
+    status_code = HTTPStatus.NOT_FOUND
+
+    def __init__(self, message: str = None):
+        self.message = message
+        super().__init__(self.message)
+
+class OrodhaInternalError(Exception):
+    """
+    Exception for when there is an internal server error.
+    """
+    status_code = HTTPStatus.INTERNAL_SERVER_ERROR
+
+    def __init__(self, message: str = None):
+        self.message = message
+        super().__init__(self.message)

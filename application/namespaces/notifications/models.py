@@ -1,4 +1,4 @@
-"""Module which contains the Mongoengine document definitions."""
+"""Module which contains the Mongoengine document definitions for Notifications."""
 from mongoengine import Document, StringField, ListField, DateTimeField
 
 class Notification(Document):
