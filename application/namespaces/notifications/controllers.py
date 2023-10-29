@@ -9,10 +9,12 @@ from mongoengine import (
     DoesNotExist,
 )
 from application.config import obtain_config
-from application.namespaces.notifications.models import AVAILABLE_NOTIFICATION_TYPES, Notification
+from application.namespaces.notifications.models import (
+    Notification,
+    notification_factory
+)
 from application.namespaces.notifications.exceptions import (
     OrodhaForbiddenError,
-    NotificationTypeError,
     OrodhaBadRequestError,
     OrodhaInternalError,
     OrodhaNotFoundError
@@ -36,29 +38,6 @@ def _create_keycloak_client() -> orodha_keycloak.OrodhaKeycloakClient:
         client_secret_key=APPCONFIG["keycloak_config"]["keycloak_client_secret_key"],
     )
 
-def _obtain_notification_type(payload: dict):
-    """
-    Helper function which takes the payload from the post request
-    and obtains the notification type for Document creation.
-
-    Args:
-        payload(dict): The payload passed in from the route functions.
-            contains String(notification_type).
-
-    Returns:
-        notification_type(AVAILABLE_NOTIFICATION_TYPES): The class of Document
-            which matches the notification_type indicator sent in with the request body.
-
-    Raises:
-        NotificationTypeError: When there is a missing or improper notification type.
-    """
-    notification_type = payload.get("notification_type")
-    if notification_type not in AVAILABLE_NOTIFICATION_TYPES.keys():
-        raise NotificationTypeError(
-            message=f"notification_type: {notification_type} is not supported."
-        )
-    return AVAILABLE_NOTIFICATION_TYPES[notification_type]
-
 def get_notifications(token: str, target_user: str):
     """
     Function which obtains a list of notifications related to a target user.
@@ -79,7 +58,6 @@ def get_notifications(token: str, target_user: str):
         OrodhaForbiddenError: If the JWT token does not contain a valid user id.
         OrodhaBadRequestError: If the value of target_user is None.
     """
-    notifications = []
     try:
         keycloak_client = _create_keycloak_client()
         if keycloak_client.get_user(token=token).get("id") is None:
@@ -87,9 +65,9 @@ def get_notifications(token: str, target_user: str):
         if target_user is None:
             raise OrodhaBadRequestError("target_user must be a value.")
 
-        for notification in Notification.objects(targets=target_user):
-            notifications.append(notification.to_json())
-            notification.modify(last_accessed=datetime.now())
+        Notification.objects(targets__user_id=target_user).modify(last_accessed=datetime.now())
+
+        notifications = [x.to_json() for x in Notification.objects(targets__user_id=target_user)]
 
     except (
         OperationError,
@@ -156,7 +134,7 @@ def post_notifications(token: str, payload: dict):
         keycloak_client = _create_keycloak_client()
         if keycloak_client.get_user(token=token).get("id") is None:
             raise OrodhaForbiddenError()
-        notification = _obtain_notification_type(payload)(**payload)
+        notification = notification_factory(payload)
         notification.save()
     except (
         ValidationError,

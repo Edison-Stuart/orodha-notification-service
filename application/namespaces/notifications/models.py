@@ -24,7 +24,7 @@ class Notification(Document):
     """
     A base document used for defining future notification types with varying behavior.
     """
-    targets = EmbeddedDocumentListField(NotificationTargetDocument(), required=True)
+    targets = EmbeddedDocumentListField(NotificationTargetDocument, required=True)
     last_accessed = DateTimeField(default=None)
 
     meta = {"allow_inheritance": True}
@@ -36,38 +36,33 @@ class ListInviteNotification(Notification):
     list_id = StringField(required=True)
 
 AVAILABLE_NOTIFICATION_TYPES = {
+# NOTE: Constant has to be declared after class definitions
+#   of Notification types in order to reference them.
     "base": Notification,
     "list-invite": ListInviteNotification
 }
 
-def target_document_factory(payload: dict) -> dict:
+def create_target_list(targets: list) -> list:
     """
-    Factory function which takes the payload from our notification factory
-    and creates an embedded target document from our target info.
-    If target data is missing, function will call util functions to obtain missing
-    data from existing data.
+    Function which takes the targets from our notification factory
+    and creates an embedded target document for each target in the given list.
 
     Args:
-        payload(dict): Our full post request payload which contains our request target data.
+        targets(list): Our request target data.
 
     Returns:
-        response(dict): A copy of our payload dictionary with targets replaced with a
-            NotificationTargetDocument containing our target id values.
+        response(list): A list of NotificationTargetDocuments containing our target id values.
     """
-    targets = payload.get("targets")
-    available_target_data = utils.check_missing_data(targets)
-    response = deepcopy(payload)
+    targets_out = []
 
-    if available_target_data is not None:
-        target_data = getattr(
-            utils,
-            f"get_target_data_from_{available_target_data}"
-        )(targets[available_target_data])
-        response["targets"] = NotificationTargetDocument(**target_data)
-    else:
-        response["targets"] = NotificationTargetDocument(**targets)
+    for target in targets:
+        target_document = utils.obtain_target_document(
+            target,
+            NotificationTargetDocument
+        )
+        targets_out.append(target_document)
 
-    return response
+    return targets_out
 
 def notification_factory(payload: dict):
     """
@@ -78,16 +73,21 @@ def notification_factory(payload: dict):
         payload(dict): The payload passed in from the route functions.
 
     Returns:
-        notification_type(**notification_data): The newly created notification document which contains
-            the data sent in from the payload.
+        notification_type(**notification_data): The newly created notification document which
+            contains the data sent in from the payload.
 
     Raises:
         NotificationTypeError: When there is a missing or improper notification type.
     """
     notification_type = payload.get("notification_type")
+
     if notification_type not in AVAILABLE_NOTIFICATION_TYPES.keys():
         raise NotificationTypeError(
             message=f"notification_type: {notification_type} is not supported."
         )
-    notification_data = target_document_factory(payload)
+
+    notification_data = {
+        "targets": create_target_list(payload.get("targets")),
+        "list_id": payload.get("list_id"),
+    }
     return AVAILABLE_NOTIFICATION_TYPES[notification_type](**notification_data)
