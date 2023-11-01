@@ -22,6 +22,7 @@ from application.namespaces.notifications.exceptions import (
 
 APPCONFIG = obtain_config()
 
+
 def _create_keycloak_client() -> orodha_keycloak.OrodhaKeycloakClient:
     """
     Helper function which creates our keycloak client from config data
@@ -37,6 +38,7 @@ def _create_keycloak_client() -> orodha_keycloak.OrodhaKeycloakClient:
         client_id=APPCONFIG["keycloak_config"]["keycloak_client_id"],
         client_secret_key=APPCONFIG["keycloak_config"]["keycloak_client_secret_key"],
     )
+
 
 def get_notifications(token: str, target_user: str):
     """
@@ -65,9 +67,11 @@ def get_notifications(token: str, target_user: str):
         if target_user is None:
             raise OrodhaBadRequestError("target_user must be a value.")
 
-        Notification.objects(targets__user_id=target_user).modify(last_accessed=datetime.now())
+        Notification.objects(targets__user_id=target_user).modify(
+            last_accessed=datetime.now())
 
-        notifications = [x.to_json() for x in Notification.objects(targets__user_id=target_user)]
+        notifications = list(Notification.objects(
+            targets__user_id=target_user))
 
     except (
         OperationError,
@@ -77,6 +81,7 @@ def get_notifications(token: str, target_user: str):
             message=f"There was an internal service error: {err}"
         )
     return notifications
+
 
 def delete_notifications(token: str, notification_id: str):
     """
@@ -110,7 +115,8 @@ def delete_notifications(token: str, notification_id: str):
             f"Unable to find unique notification with notification_id {notification_id}: {err}"
         )
     except (ValidationError, OperationError) as err:
-        raise OrodhaInternalError(f"Unable to delete notification {notification_id}: {err}")
+        raise OrodhaInternalError(
+            f"Unable to delete notification {notification_id}: {err}")
 
 
 def post_notifications(token: str, payload: dict):

@@ -40,11 +40,12 @@ notification_response_model = notification_ns.model(
     "Notification Response",
     {
         "id": fields.String(required=True),
-        "targets": fields.List(required=True),
+        "targets": fields.List(fields.Nested(request_target_model), required=True),
         "last_accessed": fields.DateTime(required=False),
         "list_id": fields.String(required=False),
     },
 )
+
 
 def get_token_from_header(headers: dict) -> str:
     """
@@ -58,6 +59,7 @@ def get_token_from_header(headers: dict) -> str:
     """
     token = headers.get("Authorization", "").lstrip("Bearer").strip()
     return token
+
 
 @notification_ns.route("")
 class NotificationsApi(Resource):
