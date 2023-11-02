@@ -11,7 +11,8 @@ from mongoengine import (
     DateTimeField,
 )
 from application.namespaces.notifications.exceptions import NotificationTypeError
-import application.namespaces.notifications.utils as utils
+import application.namespaces.notifications.utils
+
 
 class NotificationTargetDocument(EmbeddedDocument):
     """
@@ -20,14 +21,17 @@ class NotificationTargetDocument(EmbeddedDocument):
     user_id = StringField()
     keycloak_id = StringField()
 
+
 class Notification(Document):
     """
     A base document used for defining future notification types with varying behavior.
     """
-    targets = EmbeddedDocumentListField(NotificationTargetDocument, required=True)
+    targets = EmbeddedDocumentListField(
+        NotificationTargetDocument, required=True)
     last_accessed = DateTimeField(default=None)
 
     meta = {"allow_inheritance": True}
+
 
 class ListInviteNotification(Notification):
     """
@@ -35,12 +39,14 @@ class ListInviteNotification(Notification):
     """
     list_id = StringField(required=True)
 
+
 AVAILABLE_NOTIFICATION_TYPES = {
-# NOTE: Constant has to be declared after class definitions
-#   of Notification types in order to reference them.
+    # NOTE: Constant has to be declared after class definitions
+    #   of Notification types in order to reference them.
     "base": Notification,
     "list-invite": ListInviteNotification
 }
+
 
 def create_target_list(targets: list) -> list:
     """
@@ -56,13 +62,14 @@ def create_target_list(targets: list) -> list:
     targets_out = []
 
     for target in targets:
-        target_document = utils.obtain_target_document(
+        target_document = application.namespaces.notifications.utils.obtain_target_document(
             target,
             NotificationTargetDocument
         )
         targets_out.append(target_document)
 
     return targets_out
+
 
 def notification_factory(payload: dict):
     """
@@ -85,7 +92,6 @@ def notification_factory(payload: dict):
         raise NotificationTypeError(
             message=f"notification_type: {notification_type} is not supported."
         )
-
     notification_data = {
         "targets": create_target_list(payload.get("targets")),
         "list_id": payload.get("list_id"),

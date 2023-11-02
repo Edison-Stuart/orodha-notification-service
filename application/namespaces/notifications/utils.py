@@ -5,6 +5,7 @@ for our embedded NotificationTargetDocument.
 from sys import modules
 from application.namespaces.notifications.exceptions import OrodhaBadRequestError
 
+
 def obtain_target_document(target: dict, DocumentType):
     """
     Helper function which takes a target dictionary as well as
@@ -33,6 +34,7 @@ def obtain_target_document(target: dict, DocumentType):
         response = DocumentType(**id_data)
 
     return response
+
 
 def check_for_valid_id(target: dict) -> str:
     """
@@ -64,6 +66,7 @@ def check_for_valid_id(target: dict) -> str:
         response = "user_id"
     return response
 
+
 def get_id_data_from_keycloak_id(keycloak_id: str) -> dict:
     """
     Utility function which takes an existing keycloak_id and uses it
@@ -78,6 +81,7 @@ def get_id_data_from_keycloak_id(keycloak_id: str) -> dict:
             of our target user.
     """
     pass
+
 
 def get_id_data_from_user_id(user_id: str) -> dict:
     """

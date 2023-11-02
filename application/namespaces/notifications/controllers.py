@@ -70,8 +70,11 @@ def get_notifications(token: str, target_user: str):
         Notification.objects(targets__user_id=target_user).modify(
             last_accessed=datetime.now())
 
-        notifications = list(Notification.objects(
-            targets__user_id=target_user))
+        notifications = [
+            x.to_mongo() for x in Notification.objects(
+                targets__user_id=target_user
+            )
+        ]
 
     except (
         OperationError,
@@ -112,7 +115,7 @@ def delete_notifications(token: str, notification_id: str):
         notification.delete()
     except DoesNotExist as err:
         raise OrodhaNotFoundError(
-            f"Unable to find unique notification with notification_id {notification_id}: {err}"
+            f"Unable to find unique notification_id: {notification_id}"
         )
     except (ValidationError, OperationError) as err:
         raise OrodhaInternalError(
@@ -147,5 +150,5 @@ def post_notifications(token: str, payload: dict):
         FieldDoesNotExist
     ) as err:
         raise OrodhaBadRequestError(
-            message=f"There was an issue creating notification: {err}"
+            message=f"There was an issue creating notiicfation: {err}"
         )
