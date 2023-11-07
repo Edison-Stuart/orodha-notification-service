@@ -1,3 +1,4 @@
+"""Module which contains function that connects our restx namespaces to our flask blueprint"""
 from flask import Blueprint
 from flask_restx import Api
 
