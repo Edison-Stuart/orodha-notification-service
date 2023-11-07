@@ -39,15 +39,6 @@ POST_NO_TARGETS = {
     "notification_type": "list-invite"
 }
 
-POST_EMPTY_TARGETS = {
-    "targets": [{
-        "user_id": None,
-        "keycloak_id": None
-    }],
-    "list_id": MOCK_LIST_ID,
-    "notification_type": "list-invite"
-}
-
 GET_RESPONSE = [{
     # NOTE: Unused in testing. Here for consist data representation.
     'id': 'SOME_RANDOM_ID',
