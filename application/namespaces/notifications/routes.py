@@ -5,7 +5,7 @@ that direct incoming requests to the correct controllers.
 from http import HTTPStatus
 from flask_restx import Namespace, Resource, fields
 from flask import request
-from application.utils.custom_fields import  NullableString
+from application.utils.custom_fields import NullableString
 from application.namespaces.notifications.exceptions import (
     OrodhaBadRequestError,
     OrodhaForbiddenError,
@@ -46,7 +46,7 @@ notification_response_model = notification_ns.model(
     {
         "id": fields.String(required=True),
         "targets": fields.List(fields.Nested(request_target_model), required=True),
-        "last_accessed": fields.DateTime(required=False),
+        "lastAccessed": fields.DateTime(required=False),
         "list_id": fields.String(required=False),
     },
 )
@@ -89,7 +89,7 @@ class NotificationsApi(Resource):
                     id(str): The notification id.
                     list_id(str): The optional id of the associated list.
                     targets(list): A list of user_id values which this notification is meant for.
-                    last_accessed(datetime): A datetime object of the date this notification
+                    lastAccessed(datetime): A datetime object of the date this notification
                         was last accessed.
 
         Raises:

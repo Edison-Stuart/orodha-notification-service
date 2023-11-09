@@ -42,7 +42,7 @@ POST_NO_TARGETS = {
 GET_RESPONSE = [{
     # NOTE: Unused in testing. Here for consist data representation.
     'id': 'SOME_RANDOM_ID',
-    'last_accessed': 'SOME_DATETIME',
+    'lastAccessed': 'SOME_DATETIME',
 
     'list_id': MOCK_LIST_ID,
     'targets': [{

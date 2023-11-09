@@ -2,11 +2,10 @@
 Module which contains the Mongoengine document definitions as well as helper functions
 related to Notifications.
 """
-from copy import deepcopy
+from enum import Enum
 from mongoengine import (
     Document,
-    EmbeddedDocument,
-    EmbeddedDocumentListField,
+    ListField,
     StringField,
     DateTimeField,
 )
@@ -14,30 +13,36 @@ from application.namespaces.notifications.exceptions import NotificationTypeErro
 import application.namespaces.notifications.utils
 
 
-class NotificationTargetDocument(EmbeddedDocument):
-    """
-    An EmbeddedDocument which contains identity information about our notification target.
-    """
-    user_id = StringField()
-    keycloak_id = StringField()
+class NotificationTypes(Enum):
+    BASE_NOTIFICATION = 0
+    LIST_INVITE_NOTIFICATION = 1
+
+    def __contains__(self, other):
+        try:
+            self(other)
+        except ValueError:
+            return False
+        else:
+            return True
 
 
 class Notification(Document):
     """
     A base document used for defining future notification types with varying behavior.
     """
-    targets = EmbeddedDocumentListField(
-        NotificationTargetDocument, required=True)
-    last_accessed = DateTimeField(default=None)
+    notificationType = NotificationTypes.BASE_NOTIFICATION
+    targets = ListField(StringField, required=True)
+    lastAccessed = DateTimeField(default=None)
 
     meta = {"allow_inheritance": True}
 
 
 class ListInviteNotification(Notification):
     """
-    A list invite notification. Contains the list_id of the target list
+    A list invite notification. Contains the listId of the target list
     """
-    list_id = StringField(required=True)
+    notificationType = NotificationTypes.LIST_INVITE_NOTIFICATION
+    listId = StringField(required=True)
 
 
 AVAILABLE_NOTIFICATION_TYPES = {

@@ -56,7 +56,7 @@ def get_notifications(token: str, target_user: str):
 
     Raises:
         OrodhaInternalError: If there was a problem with the mongoengine query
-            or updating our last_accessed field.
+            or updating our lastAccessed field.
         OrodhaForbiddenError: If the JWT token does not contain a valid user id.
         OrodhaBadRequestError: If the value of target_user is None.
     """
@@ -68,7 +68,7 @@ def get_notifications(token: str, target_user: str):
             raise OrodhaBadRequestError("target_user must be a value.")
 
         Notification.objects(targets__user_id=target_user).modify(
-            last_accessed=datetime.now())
+            lastAccessed=datetime.now())
 
         notifications = [
             x.to_mongo() for x in Notification.objects(
@@ -150,5 +150,5 @@ def post_notifications(token: str, payload: dict):
         FieldDoesNotExist
     ) as err:
         raise OrodhaBadRequestError(
-            message=f"There was an issue creating notiicfation: {err}"
+            message=f"There was an issue creating notification: {err}"
         )
