@@ -11,7 +11,7 @@ from mongoengine import (
 from application.config import obtain_config
 from application.namespaces.notifications.models import (
     Notification,
-    notification_factory
+    notification_factory,
 )
 from application.namespaces.notifications.exceptions import (
     OrodhaForbiddenError,
@@ -67,12 +67,12 @@ def get_notifications(token: str, target_user: str):
         if target_user is None:
             raise OrodhaBadRequestError("target_user must be a value.")
 
-        Notification.objects(targets__user_id=target_user).modify(
+        Notification.objects(targets=target_user).modify(
             lastAccessed=datetime.now())
 
         notifications = [
             x.to_mongo() for x in Notification.objects(
-                targets__user_id=target_user
+                targets=target_user
             )
         ]
 

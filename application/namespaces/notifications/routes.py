@@ -21,23 +21,15 @@ notification_ns = Namespace(
     description='Notification related operations'
 )
 
-request_target_model = notification_ns.model(
-    "Model for the targets field",
-    {
-        "user_id": NullableString(),
-        "keycloak_id": NullableString()
-    }
-)
-
 list_invite_creation_model = notification_ns.model(
     "Notification input, includes optional list_id for ListInviteNotification type",
     {
         "targets": fields.List(
-            fields.Nested(request_target_model, allow_null=False),
+            fields.String,
             required=True
         ),
         "list_id": fields.String(required=False),
-        "notification_type": fields.String(default="base")
+        "notification_type": fields.Integer(default=0)
     },
 )
 
@@ -45,9 +37,9 @@ notification_response_model = notification_ns.model(
     "Notification Response",
     {
         "id": fields.String(required=True),
-        "targets": fields.List(fields.Nested(request_target_model), required=True),
+        "targets": fields.List(fields.String, required=True),
         "lastAccessed": fields.DateTime(required=False),
-        "list_id": fields.String(required=False),
+        "listId": fields.String(required=False),
     },
 )
 

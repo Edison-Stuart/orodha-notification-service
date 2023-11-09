@@ -10,20 +10,11 @@ from mongoengine import (
     DateTimeField,
 )
 from application.namespaces.notifications.exceptions import NotificationTypeError
-import application.namespaces.notifications.utils
 
 
 class NotificationTypes(Enum):
     BASE_NOTIFICATION = 0
     LIST_INVITE_NOTIFICATION = 1
-
-    def __contains__(self, other):
-        try:
-            self(other)
-        except ValueError:
-            return False
-        else:
-            return True
 
 
 class Notification(Document):
@@ -31,7 +22,7 @@ class Notification(Document):
     A base document used for defining future notification types with varying behavior.
     """
     notificationType = NotificationTypes.BASE_NOTIFICATION
-    targets = ListField(StringField, required=True)
+    targets = ListField(StringField(), required=True)
     lastAccessed = DateTimeField(default=None)
 
     meta = {"allow_inheritance": True}
@@ -43,37 +34,6 @@ class ListInviteNotification(Notification):
     """
     notificationType = NotificationTypes.LIST_INVITE_NOTIFICATION
     listId = StringField(required=True)
-
-
-AVAILABLE_NOTIFICATION_TYPES = {
-    # NOTE: Constant has to be declared after class definitions
-    #   of Notification types in order to reference them.
-    "base": Notification,
-    "list-invite": ListInviteNotification
-}
-
-
-def create_target_list(targets: list) -> list:
-    """
-    Function which takes the targets from our notification factory
-    and creates an embedded target document for each target in the given list.
-
-    Args:
-        targets(list): Our request target data.
-
-    Returns:
-        response(list): A list of NotificationTargetDocuments containing our target id values.
-    """
-    targets_out = []
-
-    for target in targets:
-        target_document = application.namespaces.notifications.utils.obtain_target_document(
-            target,
-            NotificationTargetDocument
-        )
-        targets_out.append(target_document)
-
-    return targets_out
 
 
 def notification_factory(payload: dict):
@@ -92,13 +52,21 @@ def notification_factory(payload: dict):
         NotificationTypeError: When there is a missing or improper notification type.
     """
     notification_type = payload.get("notification_type")
+    return_notification = None
 
-    if notification_type not in AVAILABLE_NOTIFICATION_TYPES.keys():
+    if notification_type is NotificationTypes.BASE_NOTIFICATION.value:
+        notification_data = {"targets": payload.get("targets")}
+        return_notification = Notification(**notification_data)
+
+    elif notification_type is NotificationTypes.LIST_INVITE_NOTIFICATION.value:
+        notification_data = {
+            "targets": payload.get("targets"),
+            "listId": payload.get("list_id"),
+        }
+        return_notification = ListInviteNotification(**notification_data)
+
+    else:
         raise NotificationTypeError(
             message=f"notification_type: {notification_type} is not supported."
         )
-    notification_data = {
-        "targets": create_target_list(payload.get("targets")),
-        "list_id": payload.get("list_id"),
-    }
-    return AVAILABLE_NOTIFICATION_TYPES[notification_type](**notification_data)
+    return return_notification
