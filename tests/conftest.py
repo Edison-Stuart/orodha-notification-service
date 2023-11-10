@@ -1,6 +1,5 @@
 import pytest
 import mongomock
-import os
 from mongoengine import connect
 import application.namespaces.notifications.models as notification_models
 from application import create_base_app

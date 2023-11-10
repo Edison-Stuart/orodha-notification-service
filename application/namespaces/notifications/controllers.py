@@ -1,5 +1,5 @@
 """Module which contains controller functions that create, obtain, and delete notifications."""
-from datetime import datetime
+from bson import ObjectId
 import orodha_keycloak
 from mongoengine import (
     InvalidQueryError,
@@ -67,12 +67,17 @@ def get_notifications(token: str, target_user: str):
         if target_user is None:
             raise OrodhaBadRequestError("target_user must be a value.")
 
-        Notification.objects(targets=target_user).modify(
-            lastAccessed=datetime.now())
+        Notification.objects(__raw__={
+            "targets": target_user
+        }).modify(__raw__=
+            { "$currentDate": { "lastAccessed": "True"} }
+        )
 
         notifications = [
             x.to_mongo() for x in Notification.objects(
-                targets=target_user
+                __raw__={
+                    "targets": target_user
+                }
             )
         ]
 
@@ -111,7 +116,9 @@ def delete_notifications(token: str, notification_id: str):
         if notification_id is None:
             raise OrodhaBadRequestError("notification_id must be a value.")
 
-        notification = Notification.objects.get(id=notification_id)
+        notification = Notification.objects.get(__raw__={
+            "_id": ObjectId(notification_id)
+        })
         notification.delete()
     except DoesNotExist as err:
         raise OrodhaNotFoundError(

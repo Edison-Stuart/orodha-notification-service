@@ -9,19 +9,20 @@ INVITE_PAYLOAD = {
         MOCK_USER_ID,
     ],
     "list_id": MOCK_LIST_ID,
-    "notification_type": 1
+    "notification_type": "LIST_INVITE"
 }
+
 
 POST_NO_TARGETS = {
     "list_id": MOCK_LIST_ID,
-    "notification_type": 1
+    "notification_type": "LIST_INVITE"
 }
 
 GET_RESPONSE = [{
-    # NOTE: Unused in testing. Here for consist data representation.
+    # NOTE: Some values are unused in testing. Here for consistent data representation.
     'id': 'SOME_RANDOM_ID',
+    'targets': [MOCK_USER_ID],
+    "notificationType": "list_invite",
     'lastAccessed': 'SOME_DATETIME',
-
     'listId': MOCK_LIST_ID,
-    'targets': [MOCK_USER_ID]
 }]

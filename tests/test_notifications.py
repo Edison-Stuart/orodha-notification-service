@@ -1,5 +1,6 @@
 import pytest
 from bson import objectid
+from datetime import datetime
 from http import HTTPStatus
 from tests.fixtures.notification_data import (
     MOCK_USER_ID,
@@ -17,13 +18,18 @@ def test_get_notifications(
         mock_notification,
         mock_create_keycloak_connection):
     api_response = mock_app_client.get(
-        f"{BASE_NOTIFICATIONS_URL}?user_id={MOCK_USER_ID}", headers={"Content-Type": "application/json"}
+        f"{BASE_NOTIFICATIONS_URL}?user_id={MOCK_USER_ID}",
+        headers={"Content-Type": "application/json"}
     )
-    notification = api_response.json[0]
+    notification_response = api_response.json
     mock_response = GET_RESPONSE[0]
 
-    assert notification["targets"] == mock_response["targets"]
-    assert notification["listId"] == mock_response["listId"]
+    assert isinstance(notification_response, list)
+
+    notification_response = notification_response[0]
+    assert notification_response["targets"] == mock_response["targets"]
+    assert notification_response["notificationType"] == mock_response["notificationType"]
+    assert notification_response["listId"] == mock_response["listId"]
 
 
 def test_get_notifications_bad_request(

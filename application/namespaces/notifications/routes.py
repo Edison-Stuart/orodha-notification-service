@@ -5,7 +5,6 @@ that direct incoming requests to the correct controllers.
 from http import HTTPStatus
 from flask_restx import Namespace, Resource, fields
 from flask import request
-from application.utils.custom_fields import NullableString
 from application.namespaces.notifications.exceptions import (
     OrodhaBadRequestError,
     OrodhaForbiddenError,
@@ -29,15 +28,16 @@ list_invite_creation_model = notification_ns.model(
             required=True
         ),
         "list_id": fields.String(required=False),
-        "notification_type": fields.Integer(default=0)
+        "notification_type": fields.String(default="base"),
     },
 )
 
 notification_response_model = notification_ns.model(
     "Notification Response",
     {
-        "id": fields.String(required=True),
+        "id": fields.String(required=True, attribute="_id"),
         "targets": fields.List(fields.String, required=True),
+        "notificationType": fields.String(),
         "lastAccessed": fields.DateTime(required=False),
         "listId": fields.String(required=False),
     },
@@ -79,10 +79,11 @@ class NotificationsApi(Resource):
             response(list): A list containing the notifications associated with the user_id.
                 Contains:
                     id(str): The notification id.
-                    list_id(str): The optional id of the associated list.
+                    listId(str): The optional id of the associated list.
                     targets(list): A list of user_id values which this notification is meant for.
                     lastAccessed(datetime): A datetime object of the date this notification
                         was last accessed.
+                    notificationType(str): A string representing the type of notification.
 
         Raises:
             OrodhaForbiddenError: If the JWT token from the request header
@@ -103,7 +104,6 @@ class NotificationsApi(Resource):
             OrodhaInternalError,
         ) as err:
             notification_ns.abort(err.status_code, err.message)
-
         return response
 
     @notification_ns.expect(list_invite_creation_model, validate=True)
@@ -116,8 +116,8 @@ class NotificationsApi(Resource):
             targets(list): A list of user_id values used to connect notifications
                 to their recipients.
             notification_type(str): A value that determines which Notification type
-                should be created with the incoming data. Needs to be a key
-                of AVAILABLE_NOTIFICATION_TYPES, which is defined in the models module.
+                should be created with the incoming data. Has to be the value of one of
+                the NotificationType enum options.
             list_id(str): An optional list_id which connects the targets to a the list
                 via the ListInviteNotification.
 
