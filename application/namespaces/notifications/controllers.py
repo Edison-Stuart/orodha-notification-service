@@ -69,8 +69,9 @@ def get_notifications(token: str, target_user: str):
 
         Notification.objects(__raw__={
             "targets": target_user
-        }).modify(__raw__=
-            { "$currentDate": { "lastAccessed": "True"} }
+        }).modify(__raw__={"$currentDate": {"lastAccessed": {
+            "$type": "date"
+        }}}
         )
 
         notifications = [
