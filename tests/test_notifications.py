@@ -1,13 +1,12 @@
 import pytest
 from bson import objectid
+from datetime import datetime
 from http import HTTPStatus
 from tests.fixtures.notification_data import (
     MOCK_USER_ID,
     GET_RESPONSE,
     INVITE_PAYLOAD,
     POST_NO_TARGETS,
-    POST_WITH_USER_ID,
-    POST_WITH_KEYCLOAK_ID
 )
 
 BAD_ID = objectid.ObjectId()
@@ -19,13 +18,18 @@ def test_get_notifications(
         mock_notification,
         mock_create_keycloak_connection):
     api_response = mock_app_client.get(
-        f"{BASE_NOTIFICATIONS_URL}?user_id={MOCK_USER_ID}", headers={"Content-Type": "application/json"}
+        f"{BASE_NOTIFICATIONS_URL}?user_id={MOCK_USER_ID}",
+        headers={"Content-Type": "application/json"}
     )
-    notification = api_response.json[0]
+    notification_response = api_response.json
     mock_response = GET_RESPONSE[0]
 
-    assert notification["targets"] == mock_response["targets"]
-    assert notification["list_id"] == mock_response["list_id"]
+    assert isinstance(notification_response, list)
+
+    notification_response = notification_response[0]
+    assert notification_response["targets"] == mock_response["targets"]
+    assert notification_response["notificationType"] == mock_response["notificationType"]
+    assert notification_response["listId"] == mock_response["listId"]
 
 
 def test_get_notifications_bad_request(
@@ -48,7 +52,7 @@ def test_delete_notifications(
         f"{BASE_NOTIFICATIONS_URL}?notification_id={notification_id}",
         headers={"Content-Type": "application/json"}
     )
-    assert api_response.json == {"status_code": HTTPStatus.OK}
+    assert api_response.status_code == HTTPStatus.OK
 
 
 def test_delete_notifications_not_found(
@@ -63,7 +67,7 @@ def test_delete_notifications_not_found(
     assert api_response.json == {
         'message': f'Unable to find unique notification_id: {BAD_ID}. You have' +
         f' requested this URI [{BASE_NOTIFICATIONS_URL}] but did you mean {BASE_NOTIFICATIONS_URL} ?'
-        }
+    }
 
 
 def test_delete_notifications_bad_request(
@@ -78,33 +82,10 @@ def test_delete_notifications_bad_request(
     assert api_response.json == {'message': 'notification_id must be a value.'}
 
 
-def test_post_notifications_with_keycloak_id(
+def test_post_notifications(
         mock_app_client,
         mock_create_keycloak_connection,
-        mock_get_id_from_user_id,
-        mock_get_id_from_keycloak_id):
-    api_response = mock_app_client.post(
-        BASE_NOTIFICATIONS_URL,
-        json=POST_WITH_KEYCLOAK_ID
-    )
-    assert api_response.json == {"status_code": HTTPStatus.OK}
-
-
-def test_post_notifications_with_user_id(
-        mock_app_client,
-        mock_create_keycloak_connection,
-        mock_get_id_from_keycloak_id,
-        mock_get_id_from_user_id):
-    api_response = mock_app_client.post(
-        BASE_NOTIFICATIONS_URL,
-        json=POST_WITH_USER_ID
-    )
-    assert api_response.json == {"status_code": HTTPStatus.OK}
-
-
-def test_post_notifications_full_payload(
-        mock_app_client,
-        mock_create_keycloak_connection):
+):
     api_response = mock_app_client.post(
         BASE_NOTIFICATIONS_URL,
         json=INVITE_PAYLOAD
@@ -117,15 +98,6 @@ def test_post_notifications_no_targets(mock_app_client, mock_create_keycloak_con
         BASE_NOTIFICATIONS_URL,
         json=POST_NO_TARGETS
     )
-    assert api_response.json == {'errors': {'targets': "'targets' is a required property"}, 'message': 'Input payload validation failed'}
+    assert api_response.json == {'errors': {
+        'targets': "'targets' is a required property"}, 'message': 'Input payload validation failed'}
     assert api_response.status_code == HTTPStatus.BAD_REQUEST
-
-
-def test_post_notifications_empty_targets(mock_app_client, mock_create_keycloak_connection):
-    api_response = mock_app_client.post(
-        BASE_NOTIFICATIONS_URL,
-        json=POST_NO_TARGETS
-    )
-    assert api_response.json == {'errors': {'targets': "'targets' is a required property"}, 'message': 'Input payload validation failed'}
-    assert api_response.status_code == HTTPStatus.BAD_REQUEST
-

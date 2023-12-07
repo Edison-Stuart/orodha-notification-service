@@ -1,39 +1,49 @@
 version: "3"
 
 services:
-  orodha-notification-server:
-    hostname: notification-service
-    container_name: notification-service
-    image: ${DOCKER_USERNAME}/orodha-notification-service:${TAG}
-    build:
-      dockerfile: Dockerfile
-      context: .
-    volumes:
-      - ./application:/orodha-notification-service/application
-    ports:
-      - "5000:5000"
-    networks:
-      - notification-service-network
+    orodha-notification-server:
+        hostname: notification-service
+        container_name: notification-service
+        image: ${DOCKER_USERNAME}/orodha-notification-service:${TAG}
+        build:
+            dockerfile: Dockerfile
+            context: .
+        volumes:
+            - ./application:/orodha-notification-service/application
+        environment:
+            KEYCLOAK_SERVER_URL: $KEYCLOAK_SERVER_URL
+            KEYCLOAK_REALM_NAME: $KEYCLOAK_REALM_NAME
+            KEYCLOAK_CLIENT_ID: $KEYCLOAK_CLIENT_ID
+            KEYCLOAK_CLIENT_SECRET_KEY: $KEYCLOAK_CLIENT_SECRET_KEY
+            DBUSER: $DBUSER
+            DBPASSWORD: $DBPASSWORD
+            DBNAME: $DBNAME
+            DBHOSTNAME: $DBHOSTNAME
+            DBPORTS: $DBPORTS
+        ports:
+            - "5000:5000"
+        networks:
+            - notification-service-network
 
-  orodha-notification-mongo:
-    hostname: notification-service-mongo
-    container_name: notification-service-mongo
-    image: mongo
-    restart: always
-    volumes:
-      - ./scripts/db_scripts:/docker-entrypoint-initdb.d
-    environment:
-      MONGO_INITDB_DATABASE: admin
-      MONGO_INITDB_ROOT_USERNAME: $DBROOTUSER
-      MONGO_INITDB_ROOT_PASSWORD: $DBROOTPASSWORD
-      DBUSER: $DBUSER
-      DBPASSWORD: $DBPASSWORD
-      DBNAME: $DBNAME
-    ports:
-      - "27017:27017"
-    networks:
-      - notification-service-network
+    orodha-notification-mongo:
+        hostname: notification-service-mongo
+        container_name: notification-service-mongo
+        image: mongo
+        restart: always
+        volumes:
+            - ./scripts/db_scripts:/docker-entrypoint-initdb.d
+        environment:
+            MONGO_INITDB_DATABASE: admin
+            MONGO_INITDB_ROOT_USERNAME: $DBROOTUSER
+            MONGO_INITDB_ROOT_PASSWORD: $DBROOTPASSWORD
+            DBUSER: $DBUSER
+            DBPASSWORD: $DBPASSWORD
+            DBNAME: $DBNAME
+        ports:
+            - "27017:27017"
+        networks:
+            - notification-service-network
 
 networks:
-  notification-service-network:
-    driver: bridge
+    notification-service-network:
+        driver: bridge

@@ -1,5 +1,5 @@
 """Module which contains controller functions that create, obtain, and delete notifications."""
-from datetime import datetime
+from bson import ObjectId
 import orodha_keycloak
 from mongoengine import (
     InvalidQueryError,
@@ -11,7 +11,7 @@ from mongoengine import (
 from application.config import obtain_config
 from application.namespaces.notifications.models import (
     Notification,
-    notification_factory
+    notification_factory,
 )
 from application.namespaces.notifications.exceptions import (
     OrodhaForbiddenError,
@@ -56,7 +56,7 @@ def get_notifications(token: str, target_user: str):
 
     Raises:
         OrodhaInternalError: If there was a problem with the mongoengine query
-            or updating our last_accessed field.
+            or updating our lastAccessed field.
         OrodhaForbiddenError: If the JWT token does not contain a valid user id.
         OrodhaBadRequestError: If the value of target_user is None.
     """
@@ -67,12 +67,18 @@ def get_notifications(token: str, target_user: str):
         if target_user is None:
             raise OrodhaBadRequestError("target_user must be a value.")
 
-        Notification.objects(targets__user_id=target_user).modify(
-            last_accessed=datetime.now())
+        Notification.objects(__raw__={
+            "targets": target_user
+        }).modify(__raw__={"$currentDate": {"lastAccessed": {
+            "$type": "date"
+        }}}
+        )
 
         notifications = [
             x.to_mongo() for x in Notification.objects(
-                targets__user_id=target_user
+                __raw__={
+                    "targets": target_user
+                }
             )
         ]
 
@@ -111,7 +117,9 @@ def delete_notifications(token: str, notification_id: str):
         if notification_id is None:
             raise OrodhaBadRequestError("notification_id must be a value.")
 
-        notification = Notification.objects.get(id=notification_id)
+        notification = Notification.objects.get(__raw__={
+            "_id": ObjectId(notification_id)
+        })
         notification.delete()
     except DoesNotExist as err:
         raise OrodhaNotFoundError(
@@ -150,5 +158,5 @@ def post_notifications(token: str, payload: dict):
         FieldDoesNotExist
     ) as err:
         raise OrodhaBadRequestError(
-            message=f"There was an issue creating notiicfation: {err}"
+            message=f"There was an issue creating notification: {err}"
         )
